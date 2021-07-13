@@ -1,14 +1,14 @@
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.stream.ActorMaterializer
-import spray.json.JsValue
 import scala.concurrent.Future
+
 import scala.concurrent.duration._
-import scala.language.postfixOps
 import spray.json._
 
+import scala.language.postfixOps
 
 /**
  * GITHUB API:
@@ -24,34 +24,8 @@ object GitHub {
 
 	import system.dispatcher
 
+	import utils._
 	import DefaultJsonProtocol._
-
-	case class Repos(name: String)
-
-	case class Contributor(login: String)
-
-	case class ContributorsStat(login: String, contributions: Int)
-
-	// extract import information (repo-name) from api
-	implicit val repoJsonFormat: RootJsonFormat[Repos] = new RootJsonFormat[Repos] {
-		def write(repos: Repos): JsValue = ???
-
-		def read(json: JsValue): Repos = json.asJsObject.getFields("name") match {
-			case Seq(JsString(name)) => Repos(name)
-			case _ => throw DeserializationException("Repos expected")
-		}
-	}
-
-	// extract import information (contributor - login/username) from api
-	implicit val contributorJsonFormat: RootJsonFormat[Contributor] = new RootJsonFormat[Contributor] {
-
-		override def write(obj: Contributor): JsValue = ???
-
-		override def read(json: JsValue): Contributor = json.asJsObject.getFields("login") match {
-			case Seq(JsString(login)) => Contributor(login)
-			case _ => throw DeserializationException("Repos expected")
-		}
-	}
 
 	def httpRequest(uri: String): Future[HttpResponse] =
 		Http().singleRequest(HttpRequest(
@@ -82,7 +56,7 @@ object GitHub {
 		 */
 
 		// List[Repo](repo -> List[Contributors])  => Future[List[List[Contributor]]] => Future[List[Contributor]]
-		val repoAndContributorsFuture = getRepos(organization).flatMap { repoList => Future sequence repoList.flatMap(repo => List(getContributors(organization, repo))) }.map(lol => lol.flatten)
+		val repoAndContributorsFuture: Future[List[Contributor]] = getRepos(organization).flatMap { repoList => Future sequence repoList.flatMap(repo => List(getContributors(organization, repo))) }.map(lol => lol.flatten)
 
 
 		???
