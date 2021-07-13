@@ -15,7 +15,7 @@ import scala.language.postfixOps
  * GITHUB API:
  *
  * TODO:
- *   - use custom graphs(akka.streams) to retrieve all repos & contributors/repo (from paginated api) \\ MAX per_page=100
+ *   - use custom graphs(akka.streams) to retrieve all repos & contributors/repo (from paginated api) \\ MAX per_page=20
  */
 object GitHub {
 
@@ -39,12 +39,12 @@ object GitHub {
 				RawHeader("Authorization", s"token $token"), RawHeader("Accept", "application/vnd.github.v3+json")
 			))
 
-	def getRepos(organization: String, page: Int = 1): Future[List[Repo]] =
-		requestV3(s"https://api.github.com/orgs/$organization/repos?per_page=100&page=$page").flatMap(_.entity.toStrict(3 minutes))
+	def getRepos(organization: String, per_page: Int = 20, page: Int = 1): Future[List[Repo]] =
+		requestV3(s"https://api.github.com/orgs/$organization/repos?per_page=$per_page&page=$page").flatMap(_.entity.toStrict(3 minutes))
 			.map(_.data.utf8String).map(_.parseJson.convertTo[List[Repo]])
 
-	def getContributors(organization: String, repo: Repo, page: Int = 1): Future[List[Contributor]] =
-		requestV3(s"https://api.github.com/repos/$organization/${repo.name}/collaborators?per_page=100&page=$page").flatMap(_.entity.toStrict(3 minutes))
+	def getContributors(organization: String, repo: Repo, per_page: Int = 20, page: Int = 1): Future[List[Contributor]] =
+		requestV3(s"https://api.github.com/repos/$organization/${repo.name}/collaborators?per_page=$per_page&page=$page").flatMap(_.entity.toStrict(3 minutes))
 			.map(_.data.utf8String).map(_.parseJson.convertTo[List[Contributor]])
 
 	def contributionsStatGen(cl: List[Contributor]): Iterable[ContributorsStat] =
@@ -56,7 +56,7 @@ object GitHub {
 		 * Step 1: GET org repos ✅  <br/>
 		 * Step 2: GET contributors/repos ✅ <br/>
 		 * Step 2.5: CONVERT `Future[List[Repo]]  repoList => List[contributors]` ✅ <br/>
-		 * Step 3: COUNT contributors  | { “name”: <contributor_login>, “contributions”: <no_of_contributions> } \\ group by & count
+		 * Step 3: COUNT contributors  | { “name”: <contributor_login>, “contributions”: <no_of_contributions> } \\ group by & count ✅
 		 */
 
 		// List[Repo](repo -> List[Contributors])  => Future[List[List[Contributor]]] => Future[List[Contributor]]
