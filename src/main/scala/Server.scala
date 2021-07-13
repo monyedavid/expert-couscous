@@ -5,8 +5,7 @@ import akka.stream.ActorMaterializer
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
-// step 1
-import spray.json._ // implicit toJson , parseJson ..
+import spray.json._
 
 object Server {
 
@@ -19,7 +18,7 @@ object Server {
 
 	val route: Route =
 		pathPrefix("org") {
-			(path(Segment / "contributors") & get) { organization => // s /org/{org_name}/contributors
+			(path(Segment / "contributors") & get) { organization => // /org/{org_name}/contributors
 				val responseFuture = GitHub(organization)
 				val entityFuture = responseFuture.map { csl =>
 					HttpEntity(

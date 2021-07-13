@@ -4,18 +4,18 @@ object utils {
 
 	import DefaultJsonProtocol._
 
-	case class Repos(name: String)
+	case class Repo(name: String)
 
 	case class Contributor(login: String)
 
 	case class ContributorsStat(name: String, contributions: Int)
 
 	// extract import information (repo-name) from api
-	implicit val repoJsonFormat: RootJsonFormat[Repos] = new RootJsonFormat[Repos] {
-		def write(repos: Repos): JsValue = ???
+	implicit val repoJsonFormat: RootJsonFormat[Repo] = new RootJsonFormat[Repo] {
+		def write(repos: Repo): JsValue = ???
 
-		def read(json: JsValue): Repos = json.asJsObject.getFields("name") match {
-			case Seq(JsString(name)) => Repos(name)
+		def read(json: JsValue): Repo = json.asJsObject.getFields("name") match {
+			case Seq(JsString(name)) => Repo(name)
 			case _ => throw DeserializationException("Repos expected")
 		}
 	}

@@ -3,8 +3,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.stream.ActorMaterializer
-import scala.concurrent.Future
+import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import spray.json._
 
@@ -15,7 +16,6 @@ import scala.language.postfixOps
  *
  * TODO:
  *   - use custom graphs(akka.streams) to retrieve all repos & contributors/repo (from paginated api) \\ MAX per_page=100
- *   - token in resources/config
  */
 object GitHub {
 
@@ -27,26 +27,30 @@ object GitHub {
 	import utils._
 	import DefaultJsonProtocol._
 
-	def httpRequest(uri: String): Future[HttpResponse] =
+	val env: Config = ConfigFactory.load().getConfig("env-development") // if (System.getenv("SCALA_ENV") == null) "development" else System.getenv("SCALA_ENV")
+	val token: String = env.getString("token")
+
+	def requestV3(uri: String): Future[HttpResponse] =
 		Http().singleRequest(HttpRequest(
 			method = HttpMethods.GET,
 			uri = uri
 		)
 			.withHeaders(
-				RawHeader("Authorization", "token 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"), RawHeader("Accept", "application/vnd.github.v3+json")
+				RawHeader("Authorization", s"token $token"), RawHeader("Accept", "application/vnd.github.v3+json")
 			))
 
-	def getRepos(organization: String, pgn: Int = 1): Future[List[Repos]] =
-		httpRequest(s"https://api.github.com/orgs/$organization/repos?per_page=100&pgn=$pgn").flatMap(_.entity.toStrict(3 minutes))
-			.map(_.data.utf8String).map(_.parseJson.convertTo[List[Repos]])
+	def getRepos(organization: String, page: Int = 1): Future[List[Repo]] =
+		requestV3(s"https://api.github.com/orgs/$organization/repos?per_page=100&page=$page").flatMap(_.entity.toStrict(3 minutes))
+			.map(_.data.utf8String).map(_.parseJson.convertTo[List[Repo]])
 
-	def getContributors(organization: String, repo: Repos, pgn: Int = 1): Future[List[Contributor]] =
-		httpRequest(s"https://api.github.com/repos/$organization/${repo.name}/collaborators?per_page=100&pgn=$pgn").flatMap(_.entity.toStrict(3 minutes))
+	def getContributors(organization: String, repo: Repo, page: Int = 1): Future[List[Contributor]] =
+		requestV3(s"https://api.github.com/repos/$organization/${repo.name}/collaborators?per_page=100&page=$page").flatMap(_.entity.toStrict(3 minutes))
 			.map(_.data.utf8String).map(_.parseJson.convertTo[List[Contributor]])
 
-	def apply(organization: String): Future[List[ContributorsStat]] = {
+	def contributionsStatGen(cl: List[Contributor]): Iterable[ContributorsStat] =
+		cl.groupMapReduce(x => x)(_ => 1)(_ + _).map { case (contributor, count) => ContributorsStat(contributor.login, count) }
 
-		//  Future[List[String]] -> List[String] -> List[Future[List[String]]] -> Future[List[String]]
+	def apply(organization: String): Future[Iterable[ContributorsStat]] = {
 
 		/**
 		 * Step 1: GET org repos ✅  <br/>
@@ -58,8 +62,7 @@ object GitHub {
 		// List[Repo](repo -> List[Contributors])  => Future[List[List[Contributor]]] => Future[List[Contributor]]
 		val repoAndContributorsFuture: Future[List[Contributor]] = getRepos(organization).flatMap { repoList => Future sequence repoList.flatMap(repo => List(getContributors(organization, repo))) }.map(lol => lol.flatten)
 
-
-		???
+		repoAndContributorsFuture.map(contributionsStatGen)
 	}
 
 
