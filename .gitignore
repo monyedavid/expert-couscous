@@ -8,6 +8,7 @@
 
 .idea
 .bsp
+.scalafmt.conf
 
 # User-specific stuff
 .idea/**/workspace.xml

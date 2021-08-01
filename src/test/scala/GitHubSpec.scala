@@ -1,3 +1,1 @@
-class GitHubSpec {
-
-}
+class GitHubSpec {}
