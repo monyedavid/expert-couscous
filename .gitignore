@@ -10,6 +10,8 @@
 .bsp
 .scalafmt.conf
 
+src/main/resources/application.conf
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
