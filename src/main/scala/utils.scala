@@ -11,18 +11,29 @@ object utils {
   case class ContributorsStat(name: String, contributions: Int)
 
   // extract import information (repo-name) from api
-  implicit val repoJsonFormat: RootJsonFormat[Repo] = new RootJsonFormat[Repo] {
-    def write(repos: Repo): JsValue = ???
-
-    def read(json: JsValue): Repo =
-      json.asJsObject.getFields("name") match {
-        case Seq(JsString(name)) => Repo(name)
-        case _                   => throw DeserializationException("Repos expected")
-      }
-  }
+  implicit val repoJsonFormat: RootJsonFormat[Repo] = jsonFormat1(Repo)
 
   // extract import information (contributor - login/username) from api
-  implicit val contributorJsonFormat: RootJsonFormat[Contributor] =
+  implicit val contributorJsonFormat: RootJsonFormat[Contributor] = jsonFormat1(
+    Contributor
+  )
+
+  // convert contributor stat to json
+  implicit val contributorStatJsonFormat: RootJsonFormat[ContributorsStat] =
+    jsonFormat2(ContributorsStat)
+}
+
+/*
+	new RootJsonFormat[Repo] {
+	    def write(repos: Repo): JsValue = ???
+
+	    def read(json: JsValue): Repo =
+	      json.asJsObject.getFields("name") match {
+	        case Seq(JsString(name)) => Repo(name)
+	        case _                   => throw DeserializationException("Repos expected")
+	      }
+	  }
+
     new RootJsonFormat[Contributor] {
 
       override def write(obj: Contributor): JsValue = ???
@@ -33,8 +44,4 @@ object utils {
           case _                    => throw DeserializationException("Repos expected")
         }
     }
-
-  // convert contributor stat to json
-  implicit val contributorStatJsonFormat: RootJsonFormat[ContributorsStat] =
-    jsonFormat2(ContributorsStat)
-}
+ */
