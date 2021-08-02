@@ -1,15 +1,11 @@
-import akka.actor.ActorSystem
+import Implicits._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.ActorMaterializer
 import spray.json._
 
 object Server {
-
-  implicit val system: ActorSystem = ActorSystem("HighLevelExample")
-  implicit val materialize: ActorMaterializer = ActorMaterializer()
 
   import DefaultJsonProtocol._
   import system.dispatcher

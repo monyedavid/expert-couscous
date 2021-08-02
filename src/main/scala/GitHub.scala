@@ -1,8 +1,7 @@
-import akka.actor.ActorSystem
+import Implicits._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
-import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import spray.json._
 
@@ -17,9 +16,6 @@ import scala.language.postfixOps
   *   - use custom graphs(akka.streams) to retrieve all repos & contributors/repo (from paginated api) \\ MAX per_page=20
   */
 object GitHub {
-
-  implicit val system: ActorSystem = ActorSystem()
-  implicit val materialize: ActorMaterializer = ActorMaterializer()
 
   import DefaultJsonProtocol._
   import system.dispatcher
@@ -83,14 +79,20 @@ object GitHub {
 
     // List[Repo](repo -> List[Contributors])  => Future[List[List[Contributor]]] => Future[List[Contributor]]
     val repoAndContributorsFuture: Future[List[Contributor]] =
-      getRepos(organization)
-        .flatMap { repoList =>
-          Future sequence repoList
-            .flatMap(repo => List(getContributors(organization, repo)))
-        }
-        .map(lol => lol.flatten)
+      for {
+        repoList <- getRepos(organization)
+        contributors = repoList.map(repo => getContributors(organization, repo))
+        lol <- Future.sequence(contributors)
+      } yield lol.flatten
 
     repoAndContributorsFuture.map(contributionsStatGen)
   }
 
 }
+
+//      getRepos(organization)
+//        .flatMap { repoList =>
+//          Future sequence repoList
+//            .map(repo => getContributors(organization, repo))
+//        }
+//        .map(lol => lol.flatten)
