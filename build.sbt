@@ -1,21 +1,22 @@
-name := "expert-couscous"
+val scala3Version = "2.13.6"
 
-version := "0.1"
-
-scalaVersion := "2.13.3"
-
-val akkaVersion = "2.5.26"
-val akkaHttpVersion = "10.1.11"
+val Http4sVersion = "0.23.1"
+val CirceVersion = "0.14.1"
 val scalaTestVersion = "3.2.0"
 
-libraryDependencies ++= Seq(
-  // akka streams
-  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-  // akka http
-  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  // testing
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
-  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "org.scalatest" %% "scalatest" % scalaTestVersion % Test
-)
+lazy val root = project
+  .in(file("."))
+  .settings(
+    name := "expert-couscous",
+    version := "0.1.0",
+    scalaVersion := scala3Version,
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % "3.2.2",
+      "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
+      "org.http4s" %% "http4s-circe" % Http4sVersion,
+      "org.http4s" %% "http4s-dsl" % Http4sVersion,
+      "io.circe" %% "circe-generic" % CirceVersion,
+      "com.typesafe" % "config" % "1.4.1",
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+    )
+  )
